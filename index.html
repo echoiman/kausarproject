@@ -1,0 +1,2080 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>АЛТЫН ҰЯ – МЕКТЕБІМ | Оқытылған Жасанды Интеллект</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Noto+Serif:ital,wght@0,600;0,700;0,900;1,600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --cream: #FAF5EB;
+      --cream-deep: #F1E5CE;
+      --paper: #FFFBF2;
+      --crimson: #C92424;
+      --crimson-dark: #8F1414;
+      --crimson-bright: #E63939;
+      --gold: #E59D1A;
+      --gold-light: #FFD166;
+      --gold-pale: #F7D994;
+      --celadon: #1C425E;
+      --celadon-light: #2E6488;
+      --ink: #241915;
+      --ink-muted: #5C473D;
+      --ease-morph: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+      user-select: none;
+    }
+
+    /* Subtle Xuan-paper texture */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.35;
+      background-image:
+        radial-gradient(rgba(143, 20, 20, 0.045) 1px, transparent 1px),
+        radial-gradient(rgba(229, 157, 26, 0.06) 1px, transparent 1px);
+      background-size: 26px 26px, 42px 42px;
+      background-position: 0 0, 13px 13px;
+    }
+
+    /* ================= PERSISTENT 60FPS MORPH STAGE ================= */
+    #morph-stage {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      overflow: hidden;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 38%, #FFFDF7 0%, var(--cream) 56%, var(--cream-deep) 100%);
+      contain: layout style;
+    }
+
+    /* Uploaded / repo school photo ambient layer */
+    #photo-bg-wrap {
+      position: absolute;
+      inset: -4%;
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 0.9s var(--ease-morph), transform 1.2s var(--ease-morph);
+      transform: scale(1.06);
+      will-change: opacity, transform;
+    }
+    #photo-bg-wrap.visible {
+      opacity: 0.2;
+      transform: scale(1);
+    }
+    #photo-bg-wrap.strong {
+      opacity: 0.34;
+    }
+    #photo-bg-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: sepia(0.24) saturate(1.1) contrast(1.04);
+    }
+    #photo-bg-wrap::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 45%, rgba(250, 245, 235, 0.45) 0%, rgba(241, 229, 206, 0.92) 85%);
+    }
+
+    /* GPU Particle Canvas (gold sparks & crimson plum petals) */
+    #petal-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 12;
+      pointer-events: none;
+    }
+
+    /* Parallax container driven by mouse/gyro */
+    .parallax-layer {
+      position: absolute;
+      inset: 0;
+      will-change: transform;
+      transition: transform 0.25s ease-out;
+    }
+
+    /* Persistent Morph Actors */
+    .actor {
+      position: absolute;
+      will-change: transform, opacity;
+      transition: transform 1.15s var(--ease-morph), opacity 0.95s var(--ease-morph);
+    }
+
+    /* Actor 1: Imperial Golden Sun & Rotating Rays */
+    #actor-sun {
+      width: min(74vmin, 620px);
+      height: min(74vmin, 620px);
+      left: 50%;
+      top: 44%;
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0.9;
+      z-index: 1;
+    }
+    .sun-rays-spin {
+      animation: spinSlow 46s linear infinite;
+      transform-origin: center;
+    }
+    .sun-pulse {
+      animation: pulseGlow 5s ease-in-out infinite alternate;
+      transform-origin: center;
+    }
+
+    /* Actor 2: Guochao Auspicious Clouds */
+    #actor-cloud-tr {
+      width: min(44vw, 440px);
+      right: -3%;
+      top: -2%;
+      z-index: 3;
+      opacity: 0.92;
+    }
+    #actor-cloud-bl {
+      width: min(38vw, 380px);
+      left: -4%;
+      bottom: 8%;
+      z-index: 4;
+      opacity: 0.85;
+    }
+    .cloud-drift {
+      animation: floatGentle 7s ease-in-out infinite alternate;
+    }
+
+    /* Actor 3: Plum Blossom Branch (Meihua) */
+    #actor-plum {
+      width: min(40vw, 400px);
+      left: -2%;
+      top: -2%;
+      z-index: 5;
+      opacity: 0.95;
+      transform-origin: top left;
+    }
+    .plum-sway {
+      animation: swayBranch 6.5s ease-in-out infinite alternate;
+      transform-origin: 0% 15%;
+    }
+
+    /* Actor 4: Celadon-Gold STEM Temple Dome */
+    #actor-temple {
+      width: min(64vw, 560px);
+      left: 50%;
+      bottom: -8%;
+      transform: translate(-50%, 60%) scale(0.8);
+      opacity: 0;
+      z-index: 6;
+    }
+
+    /* Actor 5: Red-Crowned Crane */
+    #actor-crane {
+      width: min(26vw, 240px);
+      right: 10%;
+      top: 14%;
+      opacity: 0;
+      transform: translate(120px, -40px) scale(0.75);
+      z-index: 7;
+    }
+    .crane-glide {
+      animation: craneFloat 4.8s ease-in-out infinite alternate;
+    }
+
+    /* Actor 6: Layered Vermilion Mountain Waves */
+    #actor-mountains {
+      width: 112%;
+      left: -6%;
+      bottom: -4%;
+      height: min(36vh, 300px);
+      z-index: 8;
+      transform: translateY(35%);
+      opacity: 0.55;
+    }
+
+    /* Actor 7: Fiery Golden Tulpar / Steed */
+    #actor-tulpar {
+      width: min(44vw, 420px);
+      right: 4%;
+      bottom: 12%;
+      z-index: 9;
+      opacity: 0;
+      transform: translate(140px, 60px) scale(0.7) rotate(-8deg);
+    }
+    .tulpar-hover {
+      animation: tulparSoar 3.8s ease-in-out infinite alternate;
+    }
+
+    /* Actor 8: Diagonal Crimson Silk Ribbon */
+    #actor-ribbon {
+      width: 150vw;
+      height: 150vh;
+      left: -25vw;
+      top: -25vh;
+      z-index: 7;
+      opacity: 0;
+      transform: translate(-25%, 25%) rotate(-12deg) scale(0.9);
+    }
+
+    /* ========== STAGE MORPH STATES PER SLIDE (0..7) ========== */
+    /* Slide 0: Entrance Paifang Portal */
+    body[data-slide="0"] #actor-sun { transform: translate(-50%, -48%) scale(1.12); opacity: 0.95; }
+    body[data-slide="0"] #actor-cloud-tr { transform: translate(0, 0) scale(1); opacity: 0.9; }
+    body[data-slide="0"] #actor-cloud-bl { transform: translate(0, 0) scale(1); opacity: 0.85; }
+    body[data-slide="0"] #actor-plum { transform: translate(0, 0) rotate(0deg); opacity: 0.92; }
+    body[data-slide="0"] #actor-temple { transform: translate(-50%, 65%) scale(0.8); opacity: 0; }
+    body[data-slide="0"] #actor-mountains { transform: translateY(42%); opacity: 0.5; }
+
+    /* Slide 1: Foyer + Rising Temple Dome behind Title */
+    body[data-slide="1"] #actor-sun { transform: translate(-50%, -56%) scale(1.25); opacity: 1; }
+    body[data-slide="1"] #actor-cloud-tr { transform: translate(-10%, 4%) scale(0.92); opacity: 0.95; }
+    body[data-slide="1"] #actor-cloud-bl { transform: translate(-6%, 8%) scale(1.08); opacity: 0.9; }
+    body[data-slide="1"] #actor-plum { transform: translate(-18%, -12%) rotate(-8deg); opacity: 0.72; }
+    body[data-slide="1"] #actor-temple { transform: translate(-50%, 2%) scale(1.02); opacity: 1; }
+    body[data-slide="1"] #actor-crane { transform: translate(0, 0) scale(0.95); opacity: 0.95; }
+    body[data-slide="1"] #actor-mountains { transform: translateY(14%); opacity: 0.92; }
+
+    /* Slide 2: Core Idea & RAG Architecture */
+    body[data-slide="2"] #actor-sun { transform: translate(-86%, -68%) scale(0.82); opacity: 0.85; }
+    body[data-slide="2"] #actor-cloud-tr { transform: translate(12%, -10%) scale(0.85); opacity: 0.7; }
+    body[data-slide="2"] #actor-cloud-bl { transform: translate(-14%, 14%) scale(0.9); opacity: 0.65; }
+    body[data-slide="2"] #actor-plum { transform: translate(0%, -4%) rotate(2deg); opacity: 0.88; }
+    body[data-slide="2"] #actor-temple { transform: translate(22%, 18%) scale(0.82); opacity: 0.34; }
+    body[data-slide="2"] #actor-crane { transform: translate(-30px, -18px) scale(0.8); opacity: 0.8; }
+    body[data-slide="2"] #actor-mountains { transform: translateY(28%); opacity: 0.85; }
+
+    /* Slide 3: Deep Scientific Research (Harvard / Wharton / KZ) */
+    body[data-slide="3"] #actor-sun { transform: translate(-12%, -70%) scale(0.9); opacity: 0.78; }
+    body[data-slide="3"] #actor-cloud-tr { transform: translate(-56%, -6%) scale(0.88) scaleX(-1); opacity: 0.82; }
+    body[data-slide="3"] #actor-cloud-bl { transform: translate(10%, 16%) scale(0.82); opacity: 0.5; }
+    body[data-slide="3"] #actor-plum { transform: translate(-25%, -25%) rotate(-14deg); opacity: 0.4; }
+    body[data-slide="3"] #actor-temple { transform: translate(-92%, 22%) scale(0.75); opacity: 0.28; }
+    body[data-slide="3"] #actor-crane { transform: translate(-52vw, 10px) scaleX(-1) scale(0.75); opacity: 0.72; }
+    body[data-slide="3"] #actor-mountains { transform: translateY(20%) scaleX(1.06); opacity: 0.9; }
+
+    /* Slide 4: Live Interactive AI Tutor Simulator */
+    body[data-slide="4"] #actor-sun { transform: translate(-50%, -82%) scale(0.76); opacity: 0.65; }
+    body[data-slide="4"] #actor-cloud-tr { transform: translate(14%, -16%) scale(0.75); opacity: 0.6; }
+    body[data-slide="4"] #actor-cloud-bl { transform: translate(-16%, 22%) scale(0.78); opacity: 0.55; }
+    body[data-slide="4"] #actor-plum { transform: translate(-4%, -6%) rotate(4deg); opacity: 0.75; }
+    body[data-slide="4"] #actor-temple { transform: translate(-50%, 42%) scale(0.9); opacity: 0.16; }
+    body[data-slide="4"] #actor-crane { transform: translate(40px, -24px) scale(0.68); opacity: 0.6; }
+    body[data-slide="4"] #actor-mountains { transform: translateY(34%); opacity: 0.78; }
+
+    /* Slide 5: Why It Matters + Risk Solutions */
+    body[data-slide="5"] #actor-sun { transform: translate(-80%, -30%) scale(0.92); opacity: 0.85; }
+    body[data-slide="5"] #actor-cloud-tr { transform: translate(4%, -4%) scale(0.95); opacity: 0.85; }
+    body[data-slide="5"] #actor-plum { transform: translate(-18%, -18%) rotate(-10deg); opacity: 0.5; }
+    body[data-slide="5"] #actor-temple { transform: translate(35%, 28%) scale(0.7); opacity: 0.2; }
+    body[data-slide="5"] #actor-tulpar { transform: translate(20px, 10px) scale(0.86) rotate(-4deg); opacity: 0.25; }
+    body[data-slide="5"] #actor-mountains { transform: translateY(16%); opacity: 0.92; }
+
+    /* Slide 6: 4-Week Implementation Roadmap + Soaring Golden Tulpar */
+    body[data-slide="6"] #actor-sun { transform: translate(-24%, -54%) scale(1.06); opacity: 0.92; }
+    body[data-slide="6"] #actor-cloud-tr { transform: translate(-6%, 2%) scale(0.9); opacity: 0.85; }
+    body[data-slide="6"] #actor-plum { transform: translate(-2%, -2%) rotate(0deg); opacity: 0.85; }
+    body[data-slide="6"] #actor-temple { transform: translate(-100%, 40%) scale(0.6); opacity: 0; }
+    body[data-slide="6"] #actor-tulpar { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0.92; }
+    body[data-slide="6"] #actor-ribbon { transform: translate(-8%, 12%) rotate(-6deg) scale(0.96); opacity: 0.28; }
+    body[data-slide="6"] #actor-mountains { transform: translateY(24%); opacity: 0.88; }
+
+    /* Slide 7: Grand Finale (Silk Ribbon + Golden Tulpar + Kinetic Thanks) */
+    body[data-slide="7"] #actor-sun { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+    body[data-slide="7"] #actor-cloud-tr { transform: translate(4%, -2%) scale(1.05); opacity: 0.95; }
+    body[data-slide="7"] #actor-cloud-bl { transform: translate(-2%, 2%) scale(1.08); opacity: 0.95; }
+    body[data-slide="7"] #actor-plum { transform: translate(0, 0) rotate(2deg); opacity: 0.95; }
+    body[data-slide="7"] #actor-crane { transform: translate(-8vw, -2vh) scale(1); opacity: 0.95; }
+    body[data-slide="7"] #actor-tulpar { transform: translate(-8vw, -6vh) scale(1.06) rotate(-3deg); opacity: 0.35; }
+    body[data-slide="7"] #actor-ribbon { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0.92; }
+    body[data-slide="7"] #actor-mountains { transform: translateY(10%); opacity: 0.95; }
+
+    /* ================= PORTAL FLASH OVERLAY ================= */
+    #portal-flash {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(circle at 50% 50%, #FFFDF5 0%, #FFE299 42%, rgba(201, 36, 36, 0.35) 100%);
+      transition: opacity 0.42s ease-out;
+    }
+    #portal-flash.active { opacity: 1; }
+
+    /* ================= TOP EDITORIAL HEADER ================= */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 22px;
+      pointer-events: none;
+    }
+    .brand-seal {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+      background: rgba(255, 251, 242, 0.86);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(201, 36, 36, 0.28);
+      padding: 6px 14px 6px 8px;
+      border-radius: 999px;
+      box-shadow: 0 6px 20px rgba(143, 20, 20, 0.08);
+    }
+    .seal-stamp {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, var(--crimson), var(--crimson-dark));
+      color: var(--gold-light);
+      display: grid;
+      place-items: center;
+      font-family: 'Noto Serif', serif;
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: -0.5px;
+      border: 1px solid rgba(255, 209, 102, 0.55);
+    }
+    .brand-text {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      color: var(--crimson-dark);
+      text-transform: uppercase;
+    }
+
+    .slide-badge {
+      pointer-events: auto;
+      font-family: 'Noto Serif', serif;
+      font-weight: 900;
+      font-size: 13px;
+      color: var(--crimson-dark);
+      background: rgba(255, 251, 242, 0.88);
+      border: 1.5px solid rgba(229, 157, 26, 0.45);
+      padding: 6px 14px;
+      border-radius: 999px;
+      letter-spacing: 0.08em;
+    }
+
+    /* ================= SLIDE DECK CONTAINER ================= */
+    #deck {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 66px 24px 86px;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.65s var(--ease-morph), visibility 0.65s;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .slide-inner {
+      width: 100%;
+      max-width: 1140px;
+      max-height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+      padding: 8px 4px;
+      position: relative;
+    }
+    .slide-inner::-webkit-scrollbar { display: none; }
+
+    /* ================= KINETIC REVEAL SYSTEM ================= */
+    .reveal-mask {
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: bottom;
+    }
+    .reveal-line {
+      display: block;
+      transform: translateY(115%);
+      opacity: 0;
+      transition: transform 0.9s var(--ease-morph), opacity 0.7s ease;
+      transition-delay: var(--d, 0.08s);
+    }
+    .slide.active .reveal-line {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .stagger {
+      opacity: 0;
+      transform: translateY(28px) scale(0.97);
+      transition: transform 0.85s var(--ease-morph), opacity 0.75s ease;
+      transition-delay: var(--d, 0.1s);
+    }
+    .slide.active .stagger {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* ================= TYPOGRAPHY & EDITORIAL COMPONENTS ================= */
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--crimson);
+      background: rgba(201, 36, 36, 0.09);
+      border: 1px solid rgba(201, 36, 36, 0.25);
+      padding: 5px 13px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+    .kicker::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--crimson);
+      box-shadow: 0 0 0 3px rgba(229, 157, 26, 0.35);
+    }
+
+    .hero-title {
+      font-family: 'Noto Serif', serif;
+      font-weight: 900;
+      font-size: clamp(2rem, 5.2vw, 4.4rem);
+      line-height: 1.06;
+      color: var(--crimson-dark);
+      letter-spacing: -0.02em;
+      text-shadow: 0 6px 24px rgba(250, 245, 235, 0.9);
+    }
+    .hero-title .gold-accent {
+      color: var(--gold);
+      background: linear-gradient(135deg, #D88A0F 0%, #F5B82E 50%, #C92424 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .section-title {
+      font-family: 'Noto Serif', serif;
+      font-weight: 900;
+      font-size: clamp(1.55rem, 3.2vw, 2.6rem);
+      line-height: 1.12;
+      color: var(--crimson-dark);
+      margin-bottom: 10px;
+    }
+
+    .lead-copy {
+      font-size: clamp(0.88rem, 1.3vw, 1.05rem);
+      line-height: 1.58;
+      color: var(--ink-muted);
+      max-width: 700px;
+    }
+
+    .guochao-card {
+      background: rgba(255, 251, 242, 0.86);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1.5px solid rgba(201, 36, 36, 0.22);
+      border-radius: 20px;
+      padding: 18px 20px;
+      position: relative;
+      box-shadow: 0 12px 32px rgba(143, 20, 20, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      transition: transform 0.38s var(--ease-spring), border-color 0.3s, box-shadow 0.35s;
+    }
+    .guochao-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(201, 36, 36, 0.5);
+      box-shadow: 0 18px 38px rgba(143, 20, 20, 0.14);
+    }
+    .guochao-card::after {
+      content: "";
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 14px;
+      height: 14px;
+      border-top: 2px solid rgba(229, 157, 26, 0.65);
+      border-right: 2px solid rgba(229, 157, 26, 0.65);
+      border-radius: 0 6px 0 0;
+      pointer-events: none;
+    }
+
+    /* ================= SLIDE 0: PAIFANG ENTRANCE PORTAL ================= */
+    .portal-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+      perspective: 1200px;
+      transition: transform 0.95s cubic-bezier(0.55, 0.06, 0.22, 1), opacity 0.7s ease;
+    }
+    .portal-wrap.zooming {
+      transform: scale(3.1) translateY(6%);
+      opacity: 0;
+    }
+
+    .paifang-gate {
+      width: min(92vw, 560px);
+      background: linear-gradient(180deg, rgba(255, 251, 242, 0.94), rgba(247, 235, 211, 0.94));
+      border: 2px solid var(--crimson);
+      border-radius: 26px 26px 14px 14px;
+      padding: 18px 20px 0;
+      position: relative;
+      box-shadow: 0 24px 55px rgba(143, 20, 20, 0.18), 0 0 0 6px rgba(229, 157, 26, 0.18);
+      cursor: pointer;
+    }
+    .paifang-roof {
+      position: relative;
+      background: linear-gradient(135deg, var(--crimson-dark), var(--crimson));
+      color: var(--gold-light);
+      padding: 12px 18px;
+      border-radius: 16px;
+      border: 2px solid var(--gold);
+      margin-bottom: 14px;
+      box-shadow: 0 10px 24px rgba(143, 20, 20, 0.3);
+    }
+    .paifang-roof h1 {
+      font-family: 'Noto Serif', serif;
+      font-size: clamp(1.2rem, 3.2vw, 2rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+    .paifang-sub {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #FFF3D4;
+      margin-top: 3px;
+      font-weight: 700;
+    }
+
+    .door-frame {
+      position: relative;
+      width: 100%;
+      height: clamp(175px, 28vh, 250px);
+      border-radius: 16px 16px 0 0;
+      overflow: hidden;
+      border: 3px solid var(--celadon);
+      border-bottom: none;
+      background: radial-gradient(circle at 50% 60%, #FFF9E6 0%, #FFD87A 45%, #D94032 100%);
+      perspective: 900px;
+    }
+    .door-photo-preview {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+    .door-photo-preview.loaded { opacity: 0.85; }
+
+    .door-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 55%, rgba(255, 248, 220, 0.95) 0%, rgba(255, 209, 102, 0.4) 55%, transparent 80%);
+      animation: pulseGlow 3s ease-in-out infinite alternate;
+    }
+
+    .door-leaf {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      background: linear-gradient(180deg, rgba(164, 24, 24, 0.92), rgba(114, 14, 14, 0.96));
+      border: 2px solid var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.8s var(--ease-morph);
+      backface-visibility: hidden;
+    }
+    .door-left {
+      left: 0;
+      transform-origin: left center;
+      border-right: 1px solid var(--gold-light);
+    }
+    .door-right {
+      right: 0;
+      transform-origin: right center;
+      border-left: 1px solid var(--gold-light);
+    }
+    .door-lattice {
+      width: 72%;
+      height: 76%;
+      border: 2px solid rgba(255, 209, 102, 0.65);
+      border-radius: 8px;
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+    .door-lattice::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 1px dashed rgba(255, 209, 102, 0.5);
+      border-radius: 4px;
+    }
+    .door-knocker {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 3px solid var(--gold-light);
+      background: radial-gradient(circle, var(--gold-light), var(--gold));
+      box-shadow: 0 0 12px rgba(255, 209, 102, 0.65);
+    }
+    .paifang-gate:hover .door-left { transform: rotateY(-16deg); }
+    .paifang-gate:hover .door-right { transform: rotateY(16deg); }
+    .portal-wrap.opening .door-left { transform: rotateY(-84deg); }
+    .portal-wrap.opening .door-right { transform: rotateY(84deg); }
+
+    .cta-enter {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, var(--crimson), var(--crimson-dark));
+      color: #FFFBF0;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 0.06em;
+      padding: 13px 28px;
+      border: 2px solid var(--gold);
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 12px 28px rgba(143, 20, 20, 0.32);
+      transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
+    }
+    .cta-enter:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 16px 34px rgba(143, 20, 20, 0.42);
+    }
+    .cta-enter .arrow {
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+    .cta-enter:hover .arrow { transform: translateX(5px); }
+
+    /* ================= SLIDE 1: FOYER HERO ================= */
+    .foyer-hero {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding-bottom: 12vh;
+    }
+    .quote-ribbon {
+      background: rgba(255, 251, 242, 0.92);
+      border-left: 4px solid var(--crimson);
+      border-right: 4px solid var(--crimson);
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-family: 'Noto Serif', serif;
+      font-style: italic;
+      font-size: clamp(0.84rem, 1.35vw, 1.05rem);
+      color: var(--ink);
+      max-width: 720px;
+      box-shadow: 0 8px 24px rgba(143, 20, 20, 0.08);
+    }
+    .quote-ribbon span {
+      display: block;
+      font-style: normal;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--crimson);
+      margin-top: 4px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .hero-pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .hero-pill {
+      background: rgba(255, 251, 242, 0.9);
+      border: 1.5px solid rgba(28, 66, 94, 0.25);
+      color: var(--celadon);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 999px;
+    }
+
+    /* ================= SLIDE 2: RAG PIPELINE ================= */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+      position: relative;
+    }
+    .pipe-step {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .pipe-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--crimson), var(--crimson-dark));
+      color: var(--gold-light);
+      font-family: 'Noto Serif', serif;
+      font-weight: 900;
+      font-size: 16px;
+      display: grid;
+      place-items: center;
+      border: 1.5px solid var(--gold);
+    }
+    .pipe-step h3 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--crimson-dark);
+    }
+    .pipe-step p {
+      font-size: 12.5px;
+      line-height: 1.52;
+      color: var(--ink-muted);
+    }
+    .pulse-track {
+      margin-top: 16px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(201, 36, 36, 0.12);
+      overflow: hidden;
+      position: relative;
+    }
+    .pulse-runner {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 28%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, var(--gold), var(--crimson), transparent);
+      animation: dataPulse 2.8s linear infinite;
+    }
+
+    /* ================= SLIDE 3: RESEARCH TABS + RINGS ================= */
+    .research-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0 16px;
+    }
+    .res-tab {
+      border: 1.5px solid rgba(201, 36, 36, 0.25);
+      background: rgba(255, 251, 242, 0.85);
+      color: var(--ink);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 12.5px;
+      padding: 9px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.3s var(--ease-morph);
+    }
+    .res-tab.active {
+      background: linear-gradient(135deg, var(--crimson), var(--crimson-dark));
+      color: #FFFBF0;
+      border-color: var(--gold);
+      box-shadow: 0 8px 20px rgba(143, 20, 20, 0.25);
+    }
+
+    .research-layout {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+    .rings-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .ring-card {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px 12px;
+    }
+    .ring-svg {
+      width: 96px;
+      height: 96px;
+      transform: rotate(-90deg);
+    }
+    .ring-bg {
+      fill: none;
+      stroke: rgba(201, 36, 36, 0.12);
+      stroke-width: 8;
+    }
+    .ring-fg {
+      fill: none;
+      stroke: var(--crimson);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 251.2;
+      stroke-dashoffset: 251.2;
+      transition: stroke-dashoffset 1.15s var(--ease-morph);
+    }
+    .ring-fg.gold { stroke: var(--gold); }
+    .ring-fg.celadon { stroke: var(--celadon); }
+    .ring-val {
+      font-family: 'Noto Serif', serif;
+      font-weight: 900;
+      font-size: 24px;
+      color: var(--crimson-dark);
+      margin-top: -66px;
+      margin-bottom: 36px;
+    }
+    .ring-lbl {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink-muted);
+      line-height: 1.35;
+    }
+
+    /* ================= SLIDE 4: LIVE AI SIMULATOR ================= */
+    .sim-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 12px 0 14px;
+    }
+    .sim-btn {
+      flex: 1;
+      min-width: 210px;
+      padding: 11px 16px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(201, 36, 36, 0.28);
+      background: rgba(255, 251, 242, 0.88);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--ink);
+      transition: all 0.3s var(--ease-morph);
+    }
+    .sim-btn.active-bad {
+      background: #4A2323;
+      color: #FFE4E4;
+      border-color: #E63939;
+    }
+    .sim-btn.active-good {
+      background: linear-gradient(135deg, var(--celadon), #122E44);
+      color: #FFF8E7;
+      border-color: var(--gold);
+      box-shadow: 0 10px 24px rgba(28, 66, 94, 0.26);
+    }
+
+    .chat-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 220px;
+    }
+    .bubble {
+      padding: 13px 16px;
+      border-radius: 16px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      max-width: 92%;
+    }
+    .bubble.student {
+      align-self: flex-end;
+      background: linear-gradient(135deg, var(--crimson), var(--crimson-dark));
+      color: #FFFBF0;
+      border-bottom-right-radius: 4px;
+    }
+    .bubble.ai {
+      align-self: flex-start;
+      background: #FFFDF8;
+      border: 1.5px solid rgba(28, 66, 94, 0.25);
+      color: var(--ink);
+      border-bottom-left-radius: 4px;
+      width: 100%;
+    }
+    .sim-verdict {
+      margin-top: 8px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+    .sim-verdict.bad {
+      background: rgba(201, 36, 36, 0.1);
+      color: var(--crimson-dark);
+      border-left: 4px solid var(--crimson);
+    }
+    .sim-verdict.good {
+      background: rgba(28, 66, 94, 0.1);
+      color: var(--celadon);
+      border-left: 4px solid var(--gold);
+    }
+
+    /* ================= SLIDE 5: BENEFITS & RISK SOLUTIONS ================= */
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 13px;
+      margin-top: 14px;
+    }
+    .benefit-card h3 {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--crimson-dark);
+      margin: 6px 0 5px;
+    }
+    .benefit-card p {
+      font-size: 12.3px;
+      line-height: 1.5;
+      color: var(--ink-muted);
+    }
+    .risk-strip {
+      margin-top: 13px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .risk-pill {
+      background: rgba(28, 66, 94, 0.08);
+      border: 1px solid rgba(28, 66, 94, 0.22);
+      border-radius: 14px;
+      padding: 11px 14px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--ink);
+    }
+    .risk-pill strong { color: var(--celadon); display: block; margin-bottom: 2px; }
+
+    /* ================= SLIDE 6: 4-WEEK ROADMAP ================= */
+    .roadmap-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .week-tag {
+      display: inline-block;
+      background: var(--gold-pale);
+      color: var(--crimson-dark);
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+    .roadmap-card h3 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--crimson-dark);
+      margin-bottom: 6px;
+    }
+    .roadmap-card p {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--ink-muted);
+    }
+
+    /* ================= SLIDE 7: GRAND FINALE ================= */
+    .finale-wrap {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .kinetic-thanks {
+      font-family: 'Noto Serif', serif;
+      font-weight: 900;
+      font-size: clamp(2.1rem, 6.2vw, 5rem);
+      line-height: 1.05;
+      letter-spacing: 0.03em;
+    }
+    .thanks-top {
+      display: block;
+      color: var(--crimson-dark);
+      transform: translateX(-70px);
+      opacity: 0;
+      transition: transform 1.1s var(--ease-morph) 0.15s, opacity 0.8s ease 0.15s;
+    }
+    .thanks-bot {
+      display: block;
+      color: #FFFBF0;
+      text-shadow: 0 6px 26px rgba(143, 20, 20, 0.55);
+      transform: translateX(70px);
+      opacity: 0;
+      transition: transform 1.1s var(--ease-morph) 0.28s, opacity 0.8s ease 0.28s;
+    }
+    .slide.active .thanks-top,
+    .slide.active .thanks-bot {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    .abay-box {
+      background: rgba(255, 251, 242, 0.92);
+      border: 2px solid var(--gold);
+      border-radius: 18px;
+      padding: 14px 24px;
+      max-width: 640px;
+      box-shadow: 0 16px 36px rgba(143, 20, 20, 0.18);
+    }
+    .abay-box p {
+      font-family: 'Noto Serif', serif;
+      font-style: italic;
+      font-size: clamp(0.92rem, 1.5vw, 1.15rem);
+      color: var(--ink);
+    }
+    .abay-box span {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      color: var(--crimson);
+      text-transform: uppercase;
+    }
+
+    /* ================= BOTTOM GLASS CONTROL DOCK ================= */
+    .dock {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255, 251, 242, 0.9);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(201, 36, 36, 0.28);
+      box-shadow: 0 12px 32px rgba(143, 20, 20, 0.16);
+      max-width: 96vw;
+    }
+    .dock-btn {
+      border: none;
+      background: transparent;
+      color: var(--crimson-dark);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.25s, color 0.25s, transform 0.2s;
+      white-space: nowrap;
+    }
+    .dock-btn:hover {
+      background: rgba(201, 36, 36, 0.1);
+    }
+    .dock-btn.active {
+      background: var(--crimson);
+      color: #FFFBF0;
+    }
+    .dock-dots {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 4px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(201, 36, 36, 0.25);
+      border: none;
+      cursor: pointer;
+      transition: width 0.35s var(--ease-morph), background 0.3s;
+    }
+    .dot.active {
+      width: 24px;
+      background: var(--crimson);
+    }
+
+    #auto-progress {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      height: 3.5px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--gold), var(--crimson));
+      z-index: 70;
+      transition: width 0.1s linear;
+    }
+
+    /* ================= KEYFRAMES ================= */
+    @keyframes spinSlow { to { transform: rotate(360deg); } }
+    @keyframes pulseGlow {
+      0% { opacity: 0.78; transform: scale(0.97); }
+      100% { opacity: 1; transform: scale(1.04); }
+    }
+    @keyframes floatGentle {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(10px); }
+    }
+    @keyframes swayBranch {
+      0% { transform: rotate(-1.6deg); }
+      100% { transform: rotate(2deg); }
+    }
+    @keyframes craneFloat {
+      0% { transform: translate(0, 0) rotate(-2deg); }
+      100% { transform: translate(-10px, -12px) rotate(2deg); }
+    }
+    @keyframes tulparSoar {
+      0% { transform: translateY(0) rotate(-1.5deg); }
+      100% { transform: translateY(-12px) rotate(2deg); }
+    }
+    @keyframes dataPulse {
+      0% { left: -30%; }
+      100% { left: 105%; }
+    }
+
+    /* ================= MOBILE RESPONSIVE ================= */
+    @media (max-width: 900px) {
+      .pipeline-grid, .roadmap-grid { grid-template-columns: repeat(2, 1fr); }
+      .research-layout { grid-template-columns: 1fr; }
+      .benefits-grid, .risk-strip { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .slide { padding: 58px 14px 78px; }
+      .top-bar { padding: 10px 12px; }
+      .brand-text { font-size: 10px; }
+      .pipeline-grid, .roadmap-grid, .benefits-grid, .risk-strip { grid-template-columns: 1fr; gap: 10px; }
+      .guochao-card { padding: 14px 15px; border-radius: 16px; }
+      .dock { padding: 5px 8px; gap: 3px; }
+      .dock-btn span.lbl { display: none; }
+      .dock-btn { padding: 7px 9px; font-size: 13px; }
+      .dot { width: 6px; height: 6px; }
+      .dot.active { width: 16px; }
+    }
+  </style>
+</head>
+<body data-slide="0">
+
+  <!-- ==================== PERSISTENT GUOCHAO MORPH STAGE ==================== -->
+  <div id="morph-stage" aria-hidden="true">
+    <div id="photo-bg-wrap"><img id="photo-bg-img" alt="" /></div>
+
+    <div class="parallax-layer" data-depth="0.4">
+      <!-- Actor 1: Imperial Golden Sun -->
+      <svg id="actor-sun" class="actor" viewBox="0 0 400 400">
+        <defs>
+          <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFE699" />
+            <stop offset="55%" stop-color="#F2A922" stop-opacity="0.85" />
+            <stop offset="100%" stop-color="#C92424" stop-opacity="0.8" />
+          </radialGradient>
+        </defs>
+        <g class="sun-rays-spin" opacity="0.28">
+          <g stroke="#E59D1A" stroke-width="2" stroke-dasharray="6 8">
+            <circle cx="200" cy="200" r="176" fill="none" />
+            <circle cx="200" cy="200" r="142" fill="none" stroke="#C92424" />
+          </g>
+          <g fill="#E59D1A" opacity="0.42">
+            <polygon points="200,8 206,56 194,56" />
+            <polygon points="200,392 206,344 194,344" />
+            <polygon points="8,200 56,206 56,194" />
+            <polygon points="392,200 344,206 344,194" />
+            <polygon points="64,64 102,94 94,102" />
+            <polygon points="336,336 298,306 306,298" />
+            <polygon points="336,64 306,102 298,94" />
+            <polygon points="64,336 94,298 102,306" />
+          </g>
+        </g>
+        <circle class="sun-pulse" cx="200" cy="200" r="108" fill="url(#sunGrad)" />
+        <circle cx="200" cy="200" r="68" fill="#F2A922" opacity="0.88" />
+      </svg>
+    </div>
+
+    <div class="parallax-layer" data-depth="0.75">
+      <!-- Actor 2: Auspicious Guochao Clouds -->
+      <svg id="actor-cloud-tr" class="actor" viewBox="0 0 360 180">
+        <g class="cloud-drift">
+          <path d="M40,120 C20,120 12,92 38,84 C44,50 96,42 118,68 C134,36 198,28 228,60 C266,46 318,66 322,102 C348,108 346,140 314,140 L52,140 C30,140 24,126 40,120 Z" fill="#C92424" opacity="0.92" />
+          <path d="M56,122 C44,116 54,96 74,98 C86,74 128,74 144,94 C166,70 214,68 236,92 C264,84 294,98 296,120" fill="none" stroke="#FFD166" stroke-width="3.5" stroke-linecap="round" />
+          <path d="M98,104 C110,94 126,96 130,108 C134,118 122,126 112,120" fill="none" stroke="#FFD166" stroke-width="2.6" stroke-linecap="round" />
+          <path d="M214,104 C228,92 246,94 250,108 C254,120 240,128 228,120" fill="none" stroke="#FFD166" stroke-width="2.6" stroke-linecap="round" />
+        </g>
+      </svg>
+
+      <svg id="actor-cloud-bl" class="actor" viewBox="0 0 320 150">
+        <g class="cloud-drift">
+          <path d="M20,115 C4,112 8,84 34,82 C46,52 94,48 114,72 C142,48 198,52 214,82 C244,76 286,92 284,118 C302,124 294,142 266,142 L34,142 Z" fill="#D93636" opacity="0.86" />
+          <path d="M40,120 C56,96 96,94 114,112 C136,88 188,88 206,112 C230,104 256,112 264,126" fill="none" stroke="#F7D994" stroke-width="3" stroke-linecap="round" />
+        </g>
+      </svg>
+
+      <!-- Actor 3: Meihua Plum Blossom Branch -->
+      <svg id="actor-plum" class="actor" viewBox="0 0 360 260">
+        <g class="plum-sway">
+          <path d="M-10,24 Q72,46 132,96 T258,132" fill="none" stroke="#4D1A17" stroke-width="7" stroke-linecap="round" />
+          <path d="M95,72 Q156,42 216,44" fill="none" stroke="#4D1A17" stroke-width="4.5" stroke-linecap="round" />
+          <path d="M148,106 Q192,148 242,166" fill="none" stroke="#4D1A17" stroke-width="3.5" stroke-linecap="round" />
+          <g fill="#D92B2B" stroke="#FFD166" stroke-width="1.2">
+            <circle cx="132" cy="94" r="10" /><circle cx="122" cy="84" r="7" /><circle cx="142" cy="84" r="7" />
+            <circle cx="212" cy="44" r="9" /><circle cx="204" cy="36" r="6" /><circle cx="220" cy="36" r="6" />
+            <circle cx="256" cy="132" r="11" /><circle cx="246" cy="122" r="7" /><circle cx="266" cy="122" r="7" />
+            <circle cx="182" cy="132" r="8" /><circle cx="238" cy="166" r="8" /><circle cx="72" cy="54" r="8" />
+          </g>
+          <g fill="#FFD166">
+            <circle cx="132" cy="90" r="3" /><circle cx="212" cy="41" r="2.8" /><circle cx="256" cy="128" r="3.2" />
+            <circle cx="182" cy="132" r="2.4" /><circle cx="238" cy="166" r="2.4" />
+          </g>
+        </g>
+      </svg>
+
+      <!-- Actor 5: Red-Crowned Crane -->
+      <svg id="actor-crane" class="actor" viewBox="0 0 240 160">
+        <g class="crane-glide">
+          <path d="M118,86 C86,58 46,42 18,52 C48,66 76,84 102,96 Z" fill="#FFFDF8" stroke="#1C425E" stroke-width="2" />
+          <path d="M126,86 C148,46 184,22 216,24 C194,48 168,72 142,92 Z" fill="#FFFDF8" stroke="#1C425E" stroke-width="2" />
+          <path d="M18,52 C34,58 48,64 62,72 L46,74 C34,68 24,60 18,52 Z" fill="#241915" />
+          <path d="M186,32 C196,26 206,24 216,24 C208,34 198,42 186,48 Z" fill="#241915" />
+          <ellipse cx="122" cy="96" rx="28" ry="12" fill="#FFFDF8" stroke="#1C425E" stroke-width="2" />
+          <path d="M148,92 C164,86 176,78 186,76" fill="none" stroke="#FFFDF8" stroke-width="6" stroke-linecap="round" />
+          <circle cx="188" cy="75" r="5" fill="#FFFDF8" stroke="#1C425E" stroke-width="1.5" />
+          <circle cx="188" cy="72" r="2.6" fill="#C92424" />
+          <polygon points="193,74 208,77 193,79" fill="#E59D1A" />
+          <path d="M94,102 L58,126 M98,105 L66,134" stroke="#241915" stroke-width="2" stroke-linecap="round" />
+        </g>
+      </svg>
+    </div>
+
+    <div class="parallax-layer" data-depth="1.15">
+      <!-- Actor 4: Temple of Heaven / Smart STEM Knowledge Dome -->
+      <svg id="actor-temple" class="actor" viewBox="0 0 540 340">
+        <!-- Marble Base -->
+        <rect x="62" y="276" width="416" height="22" rx="4" fill="#FFFBF2" stroke="#C92424" stroke-width="2.5" />
+        <rect x="92" y="254" width="356" height="22" rx="4" fill="#F7EBD3" stroke="#E59D1A" stroke-width="2" />
+        <!-- Red Pillars -->
+        <g fill="#B31B1B">
+          <rect x="136" y="204" width="14" height="50" /><rect x="186" y="204" width="14" height="50" />
+          <rect x="263" y="204" width="14" height="50" /><rect x="340" y="204" width="14" height="50" />
+          <rect x="390" y="204" width="14" height="50" />
+        </g>
+        <!-- Tier 1 Roof -->
+        <path d="M84,206 Q270,176 456,206 L432,168 Q270,148 108,168 Z" fill="#1C425E" stroke="#FFD166" stroke-width="3" />
+        <!-- Tier 2 Roof -->
+        <path d="M126,154 Q270,128 414,154 L390,118 Q270,102 150,118 Z" fill="#255478" stroke="#FFD166" stroke-width="3" />
+        <!-- Top Dome -->
+        <path d="M168,106 Q270,42 372,106 Z" fill="#1C425E" stroke="#FFD166" stroke-width="3" />
+        <!-- Golden Spire -->
+        <line x1="270" y1="62" x2="270" y2="22" stroke="#E59D1A" stroke-width="5" stroke-linecap="round" />
+        <circle cx="270" cy="24" r="9" fill="#FFD166" stroke="#C92424" stroke-width="2" />
+        <!-- STEM Glowing Core Windows -->
+        <g fill="#FFD166" opacity="0.88">
+          <rect x="220" y="214" width="24" height="32" rx="12" />
+          <rect x="296" y="214" width="24" height="32" rx="12" />
+        </g>
+      </svg>
+
+      <!-- Actor 8: Diagonal Crimson Silk Ribbon -->
+      <svg id="actor-ribbon" class="actor" viewBox="0 0 1200 800" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="ribbonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#E63939" />
+            <stop offset="50%" stop-color="#B51919" />
+            <stop offset="100%" stop-color="#7A0E0E" />
+          </linearGradient>
+        </defs>
+        <path d="M-80,680 C240,560 440,340 760,260 C960,210 1120,130 1280,20 L1280,270 C1080,380 900,450 680,500 C400,564 210,720 -80,820 Z" fill="url(#ribbonGrad)" />
+        <path d="M-80,694 C240,574 440,354 760,274 C960,224 1120,144 1280,34" fill="none" stroke="#FFD166" stroke-width="5" opacity="0.85" />
+        <path d="M-80,804 C210,704 400,548 680,484 C900,434 1080,364 1280,254" fill="none" stroke="#FFD166" stroke-width="4" opacity="0.7" />
+      </svg>
+
+      <!-- Actor 7: Fiery Golden Tulpar (Winged Steed of Innovation) -->
+      <svg id="actor-tulpar" class="actor" viewBox="0 0 360 280">
+        <defs>
+          <linearGradient id="tulparGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FFE082" />
+            <stop offset="55%" stop-color="#E59D1A" />
+            <stop offset="100%" stop-color="#C92424" />
+          </linearGradient>
+        </defs>
+        <g class="tulpar-hover">
+          <!-- Winged silhouette -->
+          <path d="M74,196 C106,158 148,144 196,136 C214,104 236,78 268,66 C284,60 302,68 310,82 C292,86 284,96 276,108 C298,116 312,134 316,156 C292,150 274,152 256,164 C264,192 260,218 246,242 C234,218 226,196 210,184 C178,192 146,204 118,228 C108,208 94,202 74,196 Z" fill="url(#tulparGrad)" stroke="#FFF4D1" stroke-width="2.5" />
+          <!-- Sweeping Wings -->
+          <path d="M188,132 C156,78 104,40 44,32 C76,62 104,88 124,116 C86,104 56,102 28,112 C66,126 104,136 146,144 Z" fill="url(#tulparGrad)" stroke="#FFF4D1" stroke-width="2" />
+          <!-- Golden Flame Mane -->
+          <path d="M236,88 C218,74 202,64 182,66 M220,104 C198,94 178,90 158,96" fill="none" stroke="#FFD166" stroke-width="4" stroke-linecap="round" />
+        </g>
+      </svg>
+
+      <!-- Actor 6: Layered Vermilion Mountain Waves -->
+      <svg id="actor-mountains" class="actor" viewBox="0 0 1440 320" preserveAspectRatio="none">
+        <path d="M0,180 Q180,90 360,165 T740,145 T1120,175 T1440,120 L1440,320 L0,320 Z" fill="#D93636" opacity="0.34" />
+        <path d="M0,225 Q220,135 460,210 T920,180 T1440,195 L1440,320 L0,320 Z" fill="#C92424" opacity="0.72" />
+        <path d="M0,225 Q220,135 460,210 T920,180 T1440,195" fill="none" stroke="#FFD166" stroke-width="3.5" opacity="0.7" />
+        <path d="M0,265 Q300,190 620,255 T1180,225 T1440,248 L1440,320 L0,320 Z" fill="#8F1414" />
+        <path d="M0,265 Q300,190 620,255 T1180,225 T1440,248" fill="none" stroke="#F2A922" stroke-width="2.5" opacity="0.85" />
+      </svg>
+    </div>
+
+    <canvas id="petal-canvas"></canvas>
+  </div>
+
+  <div id="portal-flash"></div>
+
+  <!-- ==================== TOP BAR ==================== -->
+  <header class="top-bar">
+    <div class="brand-seal">
+      <div class="seal-stamp">АҰ</div>
+      <div class="brand-text">АЛТЫН ҰЯ – МЕКТЕБІМ · STEM ЖИ</div>
+    </div>
+    <div class="slide-badge" id="slide-counter">01 / 08</div>
+  </header>
+
+  <!-- ==================== 8-SLIDE DECK ==================== -->
+  <main id="deck">
+
+    <!-- SLIDE 0: PAIFANG ENTRANCE PORTAL -->
+    <section class="slide active" data-index="0">
+      <div class="slide-inner">
+        <div class="portal-wrap" id="portal-wrap">
+          <div class="kicker stagger" style="--d:0.05s">Ақылды STEM Мектеп · Инновациялық Жоба</div>
+
+          <div class="paifang-gate stagger" id="gate-trigger" style="--d:0.16s" role="button" tabindex="0" aria-label="Мектеп ішіне кіру">
+            <div class="paifang-roof">
+              <h1>АЛТЫН ҰЯ – МЕКТЕБІМ</h1>
+              <div class="paifang-sub">Оқытылған Жасанды Интеллект Ұстаханасы</div>
+            </div>
+            <div class="door-frame">
+              <img id="door-photo" class="door-photo-preview" alt="Мектеп кіреберісі" />
+              <div class="door-glow"></div>
+              <div class="door-leaf door-left">
+                <div class="door-lattice"><div class="door-knocker"></div></div>
+              </div>
+              <div class="door-leaf door-right">
+                <div class="door-lattice"><div class="door-knocker"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <p class="lead-copy stagger" style="--d:0.28s; max-width:560px">
+            Оқушыларға дайын жауап беретін емес, <strong>ойлауға үйрететін</strong> мектептің жеке ЖИ-тәлімгеріне саяхат.
+          </p>
+
+          <button class="cta-enter stagger" id="enter-btn" style="--d:0.38s">
+            Мектеп ішіне кіру <span class="arrow">→</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 1: FOYER & HERO TITLE -->
+    <section class="slide" data-index="1">
+      <div class="slide-inner">
+        <div class="foyer-hero">
+          <div class="kicker stagger" style="--d:0.06s">02 · Мектеп Фойесі және Басты Тұжырымдама</div>
+          <h2 class="hero-title">
+            <span class="reveal-mask"><span class="reveal-line" style="--d:0.14s">ОҚЫТЫЛҒАН</span></span><br />
+            <span class="reveal-mask"><span class="reveal-line gold-accent" style="--d:0.26s">ЖАСАНДЫ ИНТЕЛЛЕКТ</span></span>
+          </h2>
+          <p class="lead-copy stagger" style="--d:0.36s">
+            Әр оқушының деңгейіне бейімделетін, ҚР мектеп бағдарламасы мен ҰБТ базасына оқытылған қазақтілді <strong>Сократтық ЖИ-тәлімгер</strong>.
+          </p>
+          <div class="quote-ribbon stagger" style="--d:0.46s">
+            «Тәртіпке бағынған құл болмайды, тәртіпсіз ел болмайды»
+            <span>— Бауыржан Момышұлы · Мектеп фойесінің ұраны</span>
+          </div>
+          <div class="hero-pills stagger" style="--d:0.56s">
+            <div class="hero-pill">📚 ҚР МЖМБС оқулық базасы</div>
+            <div class="hero-pill">🧠 Сократтық жетелеу әдісі</div>
+            <div class="hero-pill">🇰🇿 100% Қазақ тілінде</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: CORE IDEA & RAG ARCHITECTURE -->
+    <section class="slide" data-index="2">
+      <div class="slide-inner">
+        <div class="kicker stagger" style="--d:0.05s">03 · Идеяның Өзегі · RAG Архитектурасы</div>
+        <h2 class="section-title">
+          <span class="reveal-mask"><span class="reveal-line" style="--d:0.12s">Көшірме емес — Терең Түсіну Жүйесі</span></span>
+        </h2>
+        <p class="lead-copy stagger" style="--d:0.2s">
+          Қарапайым чат-боттар есепті бірден шешіп беріп, оқушының ойлануын тоқтатады. Біздің мектеп ЖИ-і <strong>RAG (Retrieval-Augmented Generation)</strong> технологиясымен тек бекітілген оқулыққа сүйеніп, бағыттаушы сұрақтар қояды.
+        </p>
+
+        <div class="pipeline-grid">
+          <div class="guochao-card pipe-step stagger" style="--d:0.24s">
+            <div class="pipe-num">01</div>
+            <h3>Оқулық Базасы</h3>
+            <p>Физика, математика, информатика және химия бойынша 7–11 сынып оқулықтары мен ҰБТ есептері цифрлық базаға жүктеледі.</p>
+          </div>
+          <div class="guochao-card pipe-step stagger" style="--d:0.34s">
+            <div class="pipe-num">02</div>
+            <h3>Сұрақты Талдау</h3>
+            <p>Оқушы сұрақ қойғанда жүйе нақты тақырыпты, сынып деңгейін және оқушының қай жерде қиналғанын лезде анықтайды.</p>
+          </div>
+          <div class="guochao-card pipe-step stagger" style="--d:0.44s">
+            <div class="pipe-num">03</div>
+            <h3>Сократтық Желі</h3>
+            <p>Дайын жауапты жасырып, формуланы еске түсіретін, логиканы оятатын қадамдық бағыттаушы сұрақ береді.</p>
+          </div>
+          <div class="guochao-card pipe-step stagger" style="--d:0.54s">
+            <div class="pipe-num">04</div>
+            <h3>Мұғалімге Есеп</h3>
+            <p>Сынып қай тақырыптан жиі қателесетінін анонимді түрде жинақтап, пән мұғаліміне аналитикалық карта ұсынады.</p>
+          </div>
+        </div>
+
+        <div class="pulse-track stagger" style="--d:0.62s">
+          <div class="pulse-runner"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: DEEP SCIENTIFIC RESEARCH -->
+    <section class="slide" data-index="3">
+      <div class="slide-inner">
+        <div class="kicker stagger" style="--d:0.05s">04 · Терең Ғылыми Зерттеулер мен Дәлелдер</div>
+        <h2 class="section-title">
+          <span class="reveal-mask"><span class="reveal-line" style="--d:0.12s">Әлемдік Тәжірибе не Дейді?</span></span>
+        </h2>
+
+        <div class="research-tabs stagger" style="--d:0.2s" role="tablist">
+          <button class="res-tab active" data-res="harvard">🎓 Harvard University RCT (2025)</button>
+          <button class="res-tab" data-res="wharton">🏛️ Wharton / UPenn (2025)</button>
+          <button class="res-tab" data-res="kz">🇰🇿 Қазақстан 2026–2027</button>
+        </div>
+
+        <div class="research-layout stagger" style="--d:0.3s">
+          <div class="guochao-card" id="res-text-card">
+            <h3 id="res-heading" style="font-family:'Noto Serif',serif; font-size:1.28rem; color:var(--crimson-dark); margin-bottom:10px;"></h3>
+            <p id="res-body" style="font-size:13.5px; line-height:1.65; color:var(--ink); margin-bottom:14px;"></p>
+            <div id="res-takeaway" style="padding:11px 14px; border-radius:12px; background:rgba(229,157,26,0.14); border-left:4px solid var(--gold); font-size:12.5px; font-weight:700; color:var(--ink);"></div>
+          </div>
+
+          <div class="rings-grid">
+            <div class="guochao-card ring-card">
+              <svg class="ring-svg" viewBox="0 0 100 100">
+                <circle class="ring-bg" cx="50" cy="50" r="40" />
+                <circle class="ring-fg" id="ring-1" cx="50" cy="50" r="40" />
+              </svg>
+              <div class="ring-val" id="ring-val-1">0</div>
+              <div class="ring-lbl" id="ring-lbl-1"></div>
+            </div>
+            <div class="guochao-card ring-card">
+              <svg class="ring-svg" viewBox="0 0 100 100">
+                <circle class="ring-bg" cx="50" cy="50" r="40" />
+                <circle class="ring-fg gold" id="ring-2" cx="50" cy="50" r="40" />
+              </svg>
+              <div class="ring-val" id="ring-val-2">0</div>
+              <div class="ring-lbl" id="ring-lbl-2"></div>
+            </div>
+            <div class="guochao-card ring-card" style="grid-column: span 2; flex-direction:row; justify-content:space-around; padding:12px 16px;">
+              <div style="text-align:left;">
+                <div style="font-size:11px; font-weight:800; color:var(--celadon); text-transform:uppercase; letter-spacing:0.1em;">Зерттеу Қорытындысы</div>
+                <div id="res-stat-note" style="font-size:13px; font-weight:700; color:var(--ink); margin-top:4px;"></div>
+              </div>
+              <div id="res-badge" style="font-family:'Noto Serif',serif; font-weight:900; font-size:22px; color:var(--crimson); white-space:nowrap;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: LIVE INTERACTIVE AI TUTOR DEMO -->
+    <section class="slide" data-index="4">
+      <div class="slide-inner">
+        <div class="kicker stagger" style="--d:0.05s">05 · Тірі Интерактивті Симулятор</div>
+        <h2 class="section-title">
+          <span class="reveal-mask"><span class="reveal-line" style="--d:0.12s">Айырмашылықты Өзіңіз Көріңіз (8-сынып Физика)</span></span>
+        </h2>
+
+        <div class="sim-controls stagger" style="--d:0.2s">
+          <button class="sim-btn active-good" id="btn-sim-good">✅ Оқытылған Мектеп ЖИ (Сократтық)</button>
+          <button class="sim-btn" id="btn-sim-bad">❌ Қарапайым ЖИ (Бапталмаған)</button>
+        </div>
+
+        <div class="guochao-card chat-box stagger" style="--d:0.28s">
+          <div class="bubble student">
+            <strong>Оқушы:</strong> Кернеуі 12 В, кедергісі 4 Ом өткізгіштегі ток күшін тауып берші, тез жауабын жаз!
+          </div>
+          <div class="bubble ai" id="sim-output"></div>
+          <div class="sim-verdict good" id="sim-verdict"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: WHY IT MATTERS + RISK SOLUTIONS -->
+    <section class="slide" data-index="5">
+      <div class="slide-inner">
+        <div class="kicker stagger" style="--d:0.05s">06 · Неліктен Бұл Мектеп Үшін Маңызды?</div>
+        <h2 class="section-title">
+          <span class="reveal-mask"><span class="reveal-line" style="--d:0.12s">Стратегиялық Артықшылықтар және Қауіпсіздік</span></span>
+        </h2>
+
+        <div class="benefits-grid">
+          <div class="guochao-card benefit-card stagger" style="--d:0.16s">
+            <div style="font-size:22px">🎯</div>
+            <h3>Жеке Оқу Траекториясы</h3>
+            <p>Сыныпта 25–30 оқушы болса да, әр бала өзіне ыңғайлы қарқында 24/7 жеке түсіндірме алады.</p>
+          </div>
+          <div class="guochao-card benefit-card stagger" style="--d:0.24s">
+            <div style="font-size:22px">🇰🇿</div>
+            <h3>Қазақтілді STEM Мазмұн</h3>
+            <p>Отандық терминология мен мектеп бағдарламасына сай дәл аударма және сапалы түсіндірме.</p>
+          </div>
+          <div class="guochao-card benefit-card stagger" style="--d:0.32s">
+            <div style="font-size:22px">⏱️</div>
+            <h3>Мұғалімге -40% Жүктеме</h3>
+            <p>Үй тапсырмасын тексеру мен тест құрастыру автоматтанып, ұстаз шығармашылыққа көбірек уақыт бөледі.</p>
+          </div>
+          <div class="guochao-card benefit-card stagger" style="--d:0.4s">
+            <div style="font-size:22px">⚖️</div>
+            <h3>Ауыл мен Қала Теңдігі</h3>
+            <p>Қымбат репетиторға мүмкіндігі жоқ әр оқушыға жоғары деңгейлі олимпиадалық және ҰБТ дайындығы қолжетімді.</p>
+          </div>
+          <div class="guochao-card benefit-card stagger" style="--d:0.48s">
+            <div style="font-size:22px">🛡️</div>
+            <h3>Академиялық Адалдық</h3>
+            <p>«Дайын көшірме» бұғатталады — оқушы шешімге өз ойымен жеткенде ғана келесі деңгей ашылады.</p>
+          </div>
+          <div class="guochao-card benefit-card stagger" style="--d:0.56s">
+            <div style="font-size:22px">🚀</div>
+            <h3>Болашақ Дағдылары</h3>
+            <p>Оқушы ЖИ-ді тұтынушы ғана емес, промпт-инженерия мен сыни ойлауды меңгерген жасампаз тұлға болады.</p>
+          </div>
+        </div>
+
+        <div class="risk-strip stagger" style="--d:0.64s">
+          <div class="risk-pill"><strong>⚠️ Тәуекел: Жалған ақпарат</strong>Шешім: Тек мектеп оқулығына байланған жабық RAG базасы.</div>
+          <div class="risk-pill"><strong>⚠️ Тәуекел: ЖИ-ге тәуелділік</strong>Шешім: Күндік лимит және Сократтық сұрақ алгоритмі.</div>
+          <div class="risk-pill"><strong>⚠️ Тәуекел: Дерек қауіпсіздігі</strong>Шешім: Оқушының жеке ЖСН/аты-жөні сақталмайтын анонимді кіру.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: 4-WEEK ROADMAP -->
+    <section class="slide" data-index="6">
+      <div class="slide-inner">
+        <div class="kicker stagger" style="--d:0.05s">07 · Іске Асыру Жоспары · Оңай әрі Нақты</div>
+        <h2 class="section-title">
+          <span class="reveal-mask"><span class="reveal-line" style="--d:0.12s">4 Аптада Іске Қосылатын Пилоттық Жоба</span></span>
+        </h2>
+        <p class="lead-copy stagger" style="--d:0.18s">
+          Қымбат серверлерді қажет етпейді — мектептің информатика кабинеті, мұғалімдер тобы және белсенді оқушылар күшімен бір айда іске қосылады.
+        </p>
+
+        <div class="roadmap-grid">
+          <div class="guochao-card roadmap-card stagger" style="--d:0.24s">
+            <span class="week-tag">1-Апта</span>
+            <h3>Білім Базасын Жинау</h3>
+            <p>Физика, математика және информатика пәндерінен PDF оқулықтар мен ҰБТ есептерін тазалап жүйелеу.</p>
+          </div>
+          <div class="guochao-card roadmap-card stagger" style="--d:0.34s">
+            <span class="week-tag">2-Апта</span>
+            <h3>Сократтық Баптау</h3>
+            <p>ЖИ-ге «дайын жауап бермеу, тек бағыттау» ережесін жазып, мектептің веб-боты немесе Telegram-ботын құру.</p>
+          </div>
+          <div class="guochao-card roadmap-card stagger" style="--d:0.44s">
+            <span class="week-tag">3-Апта</span>
+            <h3>Пилоттық Сынақ</h3>
+            <p>8–11 сыныптардың 2 тобында 10 күн сынақ жүргізіп, оқушылардың пікірі мен тест нәтижесін өлшеу.</p>
+          </div>
+          <div class="guochao-card roadmap-card stagger" style="--d:0.54s">
+            <span class="week-tag">4-Апта</span>
+            <h3>QR-Стендтер мен Іске Қосу</h3>
+            <p>Мектеп дәлізіндегі ақпараттық стендтерге QR-код орнатып, кез келген оқушы телефоннан бір сканермен қосылады.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: GRAND FINALE -->
+    <section class="slide" data-index="7">
+      <div class="slide-inner">
+        <div class="finale-wrap">
+          <div class="kicker stagger" style="--d:0.06s">08 · АЛТЫН ҰЯ – МЕКТЕБІМ · Болашаққа Қадам</div>
+          <div class="kinetic-thanks">
+            <span class="thanks-top">НАЗАРЛАРЫҢЫЗҒА</span>
+            <span class="thanks-bot">РАҚМЕТ!</span>
+          </div>
+          <div class="abay-box stagger" style="--d:0.4s">
+            <p>«Сен де бір кірпіш дүниеге, кетігін тап та, бар қалан!»</p>
+            <span>— Абай Құнанбайұлы · Ғылым мен Технология Үйлесімі</span>
+          </div>
+          <button class="cta-enter stagger" id="restart-btn" style="--d:0.54s">
+            ↺ Басынан көру
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== BOTTOM DOCK & AUTOPLAY BAR ==================== -->
+  <nav class="dock" aria-label="Слайдтарды басқару">
+    <button class="dock-btn" id="btn-prev" title="Алдыңғы слайд">←</button>
+    <div class="dock-dots" id="dock-dots"></div>
+    <button class="dock-btn" id="btn-next" title="Келесі слайд">→</button>
+    <button class="dock-btn" id="btn-auto" title="Автокөрсетілім">▶ <span class="lbl">Авто</span></button>
+    <button class="dock-btn" id="btn-photo" title="Мектеп фотоларын қосу">📷 <span class="lbl">Фото</span></button>
+    <button class="dock-btn" id="btn-fs" title="Толық экран">⛶</button>
+    <input type="file" id="photo-input" accept="image/*" multiple hidden />
+  </nav>
+  <div id="auto-progress"></div>
+
+  <script>
+    (() => {
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      const total = slides.length;
+      let current = 0;
+      let isAnimatingPortal = false;
+
+      const counterEl = document.getElementById('slide-counter');
+      const dotsWrap = document.getElementById('dock-dots');
+      const portalWrap = document.getElementById('portal-wrap');
+      const portalFlash = document.getElementById('portal-flash');
+      const photoBgWrap = document.getElementById('photo-bg-wrap');
+      const photoBgImg = document.getElementById('photo-bg-img');
+      const doorPhoto = document.getElementById('door-photo');
+
+      // Store loaded school photos by slide index (0..7)
+      const slidePhotos = new Array(total).fill(null);
+
+      // Build navigation dots
+      slides.forEach((_, idx) => {
+        const d = document.createElement('button');
+        d.className = 'dot' + (idx === 0 ? ' active' : '');
+        d.setAttribute('aria-label', `Слайд ${idx + 1}`);
+        d.addEventListener('click', () => {
+          stopAuto();
+          goTo(idx);
+        });
+        dotsWrap.appendChild(d);
+      });
+      const dots = Array.from(dotsWrap.querySelectorAll('.dot'));
+
+      // Try silently loading local repo photos images/1.jpg .. images/8.jpg
+      for (let i = 0; i < total; i++) {
+        const probe = new Image();
+        const url = `images/${i + 1}.jpg`;
+        probe.onload = () => {
+          slidePhotos[i] = url;
+          if (i === 0) {
+            doorPhoto.src = url;
+            doorPhoto.classList.add('loaded');
+          }
+          if (i === current) applySlidePhoto(current);
+        };
+        probe.src = url;
+      }
+
+      function applySlidePhoto(idx) {
+        const src = slidePhotos[idx];
+        if (src && idx > 0) {
+          photoBgImg.src = src;
+          photoBgWrap.classList.add('visible');
+          photoBgWrap.classList.toggle('strong', idx === 1);
+        } else {
+          photoBgWrap.classList.remove('visible', 'strong');
+        }
+      }
+
+      // Photo manual upload fallback
+      const photoInput = document.getElementById('photo-input');
+      document.getElementById('btn-photo').addEventListener('click', () => photoInput.click());
+      photoInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files || []);
+        files.slice(0, total).forEach((file, idx) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            slidePhotos[idx] = ev.target.result;
+            if (idx === 0) {
+              doorPhoto.src = ev.target.result;
+              doorPhoto.classList.add('loaded');
+            }
+            if (idx === current) applySlidePhoto(current);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      // Core Slide Switcher
+      function goTo(targetIdx, usePortal = false) {
+        if (targetIdx < 0 || targetIdx >= total || targetIdx === current || isAnimatingPortal) return;
+
+        // Trigger 3D Zoom-Through Portal when entering Slide 1 from Slide 0
+        if (current === 0 && targetIdx === 1 && usePortal) {
+          isAnimatingPortal = true;
+          portalWrap.classList.add('opening');
+          setTimeout(() => {
+            portalWrap.classList.add('zooming');
+            portalFlash.classList.add('active');
+          }, 320);
+          setTimeout(() => {
+            commitSlide(1);
+          }, 680);
+          setTimeout(() => {
+            portalFlash.classList.remove('active');
+            portalWrap.classList.remove('opening', 'zooming');
+            isAnimatingPortal = false;
+          }, 1150);
+          return;
+        }
+        commitSlide(targetIdx);
+      }
+
+      function commitSlide(idx) {
+        slides[current].classList.remove('active');
+        dots[current].classList.remove('active');
+        current = idx;
+        document.body.dataset.slide = String(current);
+        slides[current].classList.add('active');
+        dots[current].classList.add('active');
+        counterEl.textContent = `${String(current + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
+        applySlidePhoto(current);
+
+        // Trigger slide-specific interactive animations
+        if (current === 3) renderResearch(activeResKey);
+        if (current === 4) runSimulator(activeSimMode);
+      }
+
+      // Entrance Gate & Buttons
+      const triggerEnter = () => { stopAuto(); goTo(1, true); };
+      document.getElementById('enter-btn').addEventListener('click', triggerEnter);
+      document.getElementById('gate-trigger').addEventListener('click', triggerEnter);
+      document.getElementById('gate-trigger').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); triggerEnter(); }
+      });
+      document.getElementById('restart-btn').addEventListener('click', () => { stopAuto(); goTo(0); });
+
+      document.getElementById('btn-prev').addEventListener('click', () => { stopAuto(); goTo(current - 1); });
+      document.getElementById('btn-next').addEventListener('click', () => {
+        stopAuto();
+        goTo(current + 1, current === 0);
+      });
+
+      // Keyboard Navigation
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+          e.preventDefault();
+          stopAuto();
+          goTo(current + 1, current === 0);
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+          e.preventDefault();
+          stopAuto();
+          goTo(current - 1);
+        }
+      });
+
+      // Touch Swipe Navigation (mobile-safe against vertical scroll)
+      let touchX = 0, touchY = 0;
+      window.addEventListener('touchstart', (e) => {
+        touchX = e.touches[0].clientX;
+        touchY = e.touches[0].clientY;
+      }, { passive: true });
+      window.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].clientX - touchX;
+        const dy = e.changedTouches[0].clientY - touchY;
+        if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+          stopAuto();
+          if (dx < 0) goTo(current + 1, current === 0);
+          else goTo(current - 1);
+        }
+      }, { passive: true });
+
+      // Fullscreen toggle
+      document.getElementById('btn-fs').addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.().catch(() => {});
+        } else {
+          document.exitFullscreen?.();
+        }
+      });
+
+      // Auto-play Engine
+      const btnAuto = document.getElementById('btn-auto');
+      const autoProgress = document.getElementById('auto-progress');
+      let autoTimer = null;
+      let autoStart = 0;
+      const AUTO_DURATION = 6500;
+
+      function stopAuto() {
+        if (!autoTimer) return;
+        cancelAnimationFrame(autoTimer);
+        autoTimer = null;
+        btnAuto.classList.remove('active');
+        btnAuto.innerHTML = '▶ <span class="lbl">Авто</span>';
+        autoProgress.style.width = '0%';
+      }
+
+      function tickAuto(now) {
+        if (!autoTimer) return;
+        const elapsed = now - autoStart;
+        const pct = Math.min(100, (elapsed / AUTO_DURATION) * 100);
+        autoProgress.style.width = pct + '%';
+        if (elapsed >= AUTO_DURATION) {
+          const next = (current + 1) % total;
+          goTo(next, current === 0 && next === 1);
+          autoStart = performance.now();
+        }
+        autoTimer = requestAnimationFrame(tickAuto);
+      }
+
+      btnAuto.addEventListener('click', () => {
+        if (autoTimer) {
+          stopAuto();
+        } else {
+          btnAuto.classList.add('active');
+          btnAuto.innerHTML = '⏸ <span class="lbl">Тоқтату</span>';
+          autoStart = performance.now();
+          autoTimer = requestAnimationFrame(tickAuto);
+        }
+      });
+
+      // ==================== RESEARCH DATA & RING ANIMATION (SLIDE 3) ====================
+      const researchData = {
+        harvard: {
+          heading: 'Harvard University Физика Курсы (RCT, 2025)',
+          body: 'Гарвард ғалымдары арнайы педагогикалық ережелермен оқытылған Сократтық ЖИ-тәлімгерді дәстүрлі белсенді оқытумен салыстырды. Нәтижесінде ЖИ-тәлімгермен жұмыс істеген топ материалды әлдеқайда терең әрі жылдам меңгерді.',
+          takeaway: 'Негізгі дәлел: Дұрыс оқытылған ЖИ оқушының уақытын үнемдеп қана қоймай, білім сапасын екі есеге дейін арттырады.',
+          r1: { pct: 86, text: '2.0×', label: 'Білімді терең меңгеру өсімі' },
+          r2: { pct: 83, text: '+83%', label: 'Пәнге деген қызығушылық' },
+          note: 'Орташа есеппен тақырыпты игеру уақыты айтарлықтай қысқарды',
+          badge: '-28% уақыт'
+        },
+        wharton: {
+          heading: 'Wharton / Пенсильвания Университеті (RCT, 2025)',
+          body: '1000-ға жуық оқушы қатысқан зерттеуде 3 топ салыстырылды: ЖИ-сіз, қарапайым GPT-мен және Сократтық оқытылған ЖИ-мен. Қарапайым ЖИ көмегімен дайындалғандар ЖИ-ді өшірген емтиханда төмен нәтиже көрсетті.',
+          takeaway: 'Шешуші айырма: Оқытылмаған ЖИ ойлауды әлсіретеді (-17%), ал Сократтық ЖИ өз бетінше шешу дағдысын сақтайды.',
+          r1: { pct: 74, text: '+12%', label: 'Оқытылған ЖИ: емтихан өсімі' },
+          r2: { pct: 34, text: '-17%', label: 'Қарапайым ЖИ: емтиханда құлдырау' },
+          note: 'Мектепке тек арнайы бапталған педагогикалық ЖИ қажет',
+          badge: 'RCT · 1000+'
+        },
+        kz: {
+          heading: 'Қазақстан Білім Беру Трансформациясы (2026–2027)',
+          body: 'Қазақстанда мектептерге ЖИ сауаттылығын, цифрлық STEM зертханаларын және қазақтілді білім беру модельдерін енгізу ұлттық басымдыққа айналды. Ауыл және қала мектептері арасындағы алшақтықты азайту басты мақсат.',
+          takeaway: 'Біздің мектеп мүмкіндігі: «Алтын Ұя» мектебі өңірдегі алғашқы Сократтық ЖИ-пилот алаңына айнала алады.',
+          r1: { pct: 80, text: '500+', label: 'Пилоттық ЖИ-мектептер желісі' },
+          r2: { pct: 68, text: '-40%', label: 'Мұғалімнің күнделікті рутинасы' },
+          note: 'Қазақ тіліндегі сапалы STEM білімге тең қолжетімділік',
+          badge: '2026–2027'
+        }
+      };
+
+      let activeResKey = 'harvard';
+      const CIRC = 251.2;
+
+      function renderResearch(key) {
+        activeResKey = key;
+        const d = researchData[key];
+        document.querySelectorAll('.res-tab').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.res === key);
+        });
+        document.getElementById('res-heading').textContent = d.heading;
+        document.getElementById('res-body').textContent = d.body;
+        document.getElementById('res-takeaway').textContent = d.takeaway;
+        document.getElementById('ring-val-1').textContent = d.r1.text;
+        document.getElementById('ring-lbl-1').textContent = d.r1.label;
+        document.getElementById('ring-val-2').textContent = d.r2.text;
+        document.getElementById('ring-lbl-2').textContent = d.r2.label;
+        document.getElementById('res-stat-note').textContent = d.note;
+        document.getElementById('res-badge').textContent = d.badge;
+
+        const r1 = document.getElementById('ring-1');
+        const r2 = document.getElementById('ring-2');
+        r1.style.strokeDashoffset = CIRC;
+        r2.style.strokeDashoffset = CIRC;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            r1.style.strokeDashoffset = CIRC * (1 - d.r1.pct / 100);
+            r2.style.strokeDashoffset = CIRC * (1 - d.r2.pct / 100);
+          });
+        });
+      }
+
+      document.querySelectorAll('.res-tab').forEach(btn => {
+        btn.addEventListener('click', () => renderResearch(btn.dataset.res));
+      });
+      renderResearch('harvard');
+
+      // ==================== LIVE AI SIMULATOR (SLIDE 4) ====================
+      const simTexts = {
+        good: {
+          prefix: 'Оқытылған Мектеп ЖИ: ',
+          text: 'Жарайсың, бірге табайық! 1-қадам: Тізбек бөлігі үшін Ом заңы бойынша ток күші (I), кернеу (U) және кедергі (R) қалай байланысқан? Формуланы еске түсіріп көрші. Содан кейін U = 12 В және R = 4 Ом мәндерін қойып, өзің есептеп көр — мен тексеремін!',
+          verdict: '✅ Нәтиже: Оқушы формуланы (I = U / R) өзі еске түсіріп, I = 3 А жауабын түсініп шығарады. Білім есте ұзақ сақталады.'
+        },
+        bad: {
+          prefix: 'Қарапайым ЖИ: ',
+          text: 'I = U / R = 12 / 4 = 3 А. Жауабы: 3 Ампер. Тағы есеп болса жібер, бірден шығарып беремін.',
+          verdict: '❌ Нәтиже: Оқушы дайын санды көшіріп алады, бірақ бақылау жұмысы мен ҰБТ-да формуланы есіне түсіре алмайды.'
+        }
+      };
+
+      let activeSimMode = 'good';
+      let simTimer = null;
+      const simOut = document.getElementById('sim-output');
+      const simVerdict = document.getElementById('sim-verdict');
+      const btnGood = document.getElementById('btn-sim-good');
+      const btnBad = document.getElementById('btn-sim-bad');
+
+      function runSimulator(mode) {
+        activeSimMode = mode;
+        clearTimeout(simTimer);
+        btnGood.classList.toggle('active-good', mode === 'good');
+        btnBad.classList.toggle('active-bad', mode === 'bad');
+
+        const data = simTexts[mode];
+        simVerdict.className = 'sim-verdict ' + mode;
+        simVerdict.textContent = data.verdict;
+        simOut.innerHTML = `<strong>${data.prefix}</strong><span id="sim-typed"></span>`;
+        const span = document.getElementById('sim-typed');
+
+        let i = 0;
+        function typeChar() {
+          if (i <= data.text.length) {
+            span.textContent = data.text.slice(0, i);
+            i += 2;
+            simTimer = setTimeout(typeChar, 18);
+          }
+        }
+        typeChar();
+      }
+
+      btnGood.addEventListener('click', () => runSimulator('good'));
+      btnBad.addEventListener('click', () => runSimulator('bad'));
+
+      // ==================== SUBTLE 3D PARALLAX ====================
+      const layers = Array.from(document.querySelectorAll('.parallax-layer'));
+      let targetX = 0, targetY = 0;
+      window.addEventListener('mousemove', (e) => {
+        targetX = (e.clientX / window.innerWidth - 0.5) * 24;
+        targetY = (e.clientY / window.innerHeight - 0.5) * 18;
+        layers.forEach(l => {
+          const depth = parseFloat(l.dataset.depth || '0.5');
+          l.style.transform = `translate3d(${(-targetX * depth).toFixed(1)}px, ${(-targetY * depth).toFixed(1)}px, 0)`;
+        });
+      }, { passive: true });
+
+      // ==================== 60FPS GPU CANVAS (GOLD SPARKS & PLUM PETALS) ====================
+      const canvas = document.getElementById('petal-canvas');
+      const ctx = canvas.getContext('2d', { alpha: true });
+      let w = 0, h = 0, dpr = 1;
+      const particles = [];
+      const COUNT = window.innerWidth < 640 ? 22 : 38;
+
+      function resizeCanvas() {
+        dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        w = window.innerWidth;
+        h = window.innerHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      for (let i = 0; i < COUNT; i++) {
+        const isPetal = i % 3 === 0;
+        particles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: isPetal ? 3.5 + Math.random() * 3.5 : 1.5 + Math.random() * 2.2,
+          vx: isPetal ? -0.35 - Math.random() * 0.45 : (Math.random() - 0.5) * 0.3,
+          vy: isPetal ? 0.35 + Math.random() * 0.55 : -0.25 - Math.random() * 0.4,
+          rot: Math.random() * Math.PI * 2,
+          vrot: (Math.random() - 0.5) * 0.03,
+          alpha: 0.35 + Math.random() * 0.5,
+          isPetal
+        });
+      }
+
+      let paused = false;
+      document.addEventListener('visibilitychange', () => { paused = document.hidden; });
+
+      function animateParticles() {
+        if (!paused) {
+          ctx.clearRect(0, 0, w, h);
+          for (const p of particles) {
+            p.x += p.vx + Math.sin(p.rot) * 0.25;
+            p.y += p.vy;
+            p.rot += p.vrot;
+
+            if (p.y > h + 15) { p.y = -12; p.x = Math.random() * w; }
+            if (p.y < -15) { p.y = h + 12; p.x = Math.random() * w; }
+            if (p.x < -15) p.x = w + 12;
+            if (p.x > w + 15) p.x = -12;
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.globalAlpha = p.alpha;
+            if (p.isPetal) {
+              ctx.fillStyle = '#D92B2B';
+              ctx.beginPath();
+              ctx.ellipse(0, 0, p.r * 1.4, p.r * 0.85, 0, 0, Math.PI * 2);
+              ctx.fill();
+            } else {
+              ctx.fillStyle = '#F2A922';
+              ctx.beginPath();
+              ctx.arc(0, 0, p.r, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.restore();
+          }
+        }
+        requestAnimationFrame(animateParticles);
+      }
+      requestAnimationFrame(animateParticles);
+    })();
+  </script>
+</body>
+</html>
